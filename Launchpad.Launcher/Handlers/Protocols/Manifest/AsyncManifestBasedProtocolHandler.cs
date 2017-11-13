@@ -85,7 +85,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 				await RefreshModuleManifestAsync(ct, EModule.Game);
 
 				// Download Game
-				await DownloadModuleAsync(ct, EModule.Game);
+				await DownloadModuleAsync(EModule.Game, ct);
 
 				// Verify Game
 				await VerifyModuleAsync(ct, EModule.Game);
@@ -119,8 +119,6 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 				{
 					await RefreshModuleManifestAsync(ct, EModule.Launcher);
 
-					this.ModuleInstallFinishedArgs.Module = EModule.Launcher;
-					this.ModuleInstallFailedArgs.Module = EModule.Launcher;
 					manifest = this.FileManifestHandler.GetManifest(EManifestType.Launchpad, false);
 					oldManifest = this.FileManifestHandler.GetManifest(EManifestType.Launchpad, true);
 					break;
@@ -129,8 +127,6 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 				{
 					await RefreshModuleManifestAsync(ct, EModule.Game);
 
-					this.ModuleInstallFinishedArgs.Module = EModule.Game;
-					this.ModuleInstallFailedArgs.Module = EModule.Game;
 					manifest = this.FileManifestHandler.GetManifest(EManifestType.Game, false);
 					oldManifest = this.FileManifestHandler.GetManifest(EManifestType.Game, true);
 					break;
@@ -145,44 +141,36 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			if (manifest == null)
 			{
 				Log.Error($"No manifest was found when updating the module \"{module}\". The server files may be inaccessible or missing.");
-				OnModuleInstallationFailed();
 				return;
 			}
 
 			// This dictionary holds a list of new entries and their equivalents from the old manifest. It is used
 			// to determine whether or not a file is partial, or merely old yet smaller.
-			Dictionary<ManifestEntry, ManifestEntry> oldEntriesBeingReplaced = new Dictionary<ManifestEntry, ManifestEntry>();
-			List<ManifestEntry> filesRequiringUpdate = new List<ManifestEntry>();
-			foreach (ManifestEntry fileEntry in manifest)
+			var oldEntriesBeingReplaced = new Dictionary<ManifestEntry, ManifestEntry>();
+			var filesRequiringUpdate = new List<ManifestEntry>();
+			foreach (var fileEntry in manifest)
 			{
 				filesRequiringUpdate.Add(fileEntry);
-				if (oldManifest != null)
+				if (oldManifest == null || oldManifest.Contains(fileEntry))
 				{
-					if (!oldManifest.Contains(fileEntry))
-					{
-						// See if there is an old entry which matches the new one.
-						ManifestEntry matchingOldEntry =
-							oldManifest.FirstOrDefault(oldEntry => oldEntry.RelativePath == fileEntry.RelativePath);
+					continue;
+				}
 
-						if (matchingOldEntry != null)
-						{
-							oldEntriesBeingReplaced.Add(fileEntry, matchingOldEntry);
-						}
-					}
+				// See if there is an old entry which matches the new one.
+				var matchingOldEntry = oldManifest.FirstOrDefault(oldEntry => oldEntry.RelativePath == fileEntry.RelativePath);
+
+				if (matchingOldEntry != null)
+				{
+					oldEntriesBeingReplaced.Add(fileEntry, matchingOldEntry);
 				}
 			}
 
 			try
 			{
 				int updatedFiles = 0;
-				foreach (ManifestEntry fileEntry in filesRequiringUpdate)
+				foreach (var fileEntry in filesRequiringUpdate)
 				{
 					++updatedFiles;
-
-					this.ModuleUpdateProgressArgs.IndicatorLabelMessage = GetUpdateIndicatorLabelMessage(Path.GetFileName(fileEntry.RelativePath),
-						updatedFiles,
-						filesRequiringUpdate.Count);
-					OnModuleUpdateProgressChanged();
 
 					// If we're updating an existing file, make sure to let the downloader know
 					if (oldEntriesBeingReplaced.ContainsKey(fileEntry))
@@ -198,11 +186,8 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			catch (IOException ioex)
 			{
 				Log.Warn($"Updating of {module} files failed (IOException): " + ioex.Message);
-				OnModuleInstallationFailed();
 				return;
 			}
-
-			OnModuleInstallationFinished();
 		}
 
 		/// <summary>
@@ -210,45 +195,34 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		/// </summary>
 		public override async Task VerifyModuleAsync(CancellationToken ct, EModule module)
 		{
-			List<ManifestEntry> manifest = this.FileManifestHandler.GetManifest((EManifestType) module, false);
-			List<ManifestEntry> brokenFiles = new List<ManifestEntry>();
+			var manifest = this.FileManifestHandler.GetManifest((EManifestType) module, false);
+			var brokenFiles = new List<ManifestEntry>();
 
 			if (manifest == null)
 			{
 				Log.Error($"No manifest was found when verifying the module \"{module}\". The server files may be inaccessible or missing.");
-				OnModuleInstallationFailed();
 				return;
 			}
 
 			try
 			{
 				int verifiedFiles = 0;
-				foreach (ManifestEntry fileEntry in manifest)
+				foreach (var fileEntry in manifest)
 				{
 					++verifiedFiles;
-
-					// Prepare the progress event contents
-					this.ModuleVerifyProgressArgs.IndicatorLabelMessage = GetVerifyIndicatorLabelMessage(Path.GetFileName(fileEntry.RelativePath),
-						verifiedFiles, manifest.Count);
-					OnModuleVerifyProgressChanged();
-
-					if (!fileEntry.IsFileIntegrityIntact())
+					if (fileEntry.IsFileIntegrityIntact())
 					{
-						brokenFiles.Add(fileEntry);
-						Log.Info($"File \"{Path.GetFileName(fileEntry.RelativePath)}\" failed its integrity check and was queued for redownload.");
+						continue;
 					}
+
+					brokenFiles.Add(fileEntry);
+					Log.Info($"File \"{Path.GetFileName(fileEntry.RelativePath)}\" failed its integrity check and was queued for redownload.");
 				}
 
 				int downloadedFiles = 0;
-				foreach (ManifestEntry fileEntry in brokenFiles)
+				foreach (var fileEntry in brokenFiles)
 				{
 					++downloadedFiles;
-
-					// Prepare the progress event contents
-					this.ModuleDownloadProgressArgs.IndicatorLabelMessage = GetDownloadIndicatorLabelMessage(Path.GetFileName(fileEntry.RelativePath),
-						downloadedFiles, brokenFiles.Count);
-					OnModuleDownloadProgressChanged();
-
 					for (int i = 0; i < this.Config.GetFileRetries(); ++i)
 					{
 						if (!fileEntry.IsFileIntegrityIntact())
@@ -266,10 +240,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			catch (IOException ioex)
 			{
 				Log.Warn($"Verification of {module} files failed (IOException): " + ioex.Message);
-				OnModuleInstallationFailed();
 			}
-
-			OnModuleInstallationFinished();
 		}
 
 		/// <summary>
@@ -278,7 +249,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		/// <exception cref="ArgumentOutOfRangeException">
 		/// Will be thrown if the <see cref="EModule"/> passed to the function is not a valid value.
 		/// </exception>
-		protected override async Task DownloadModuleAsync(CancellationToken ct, EModule module)
+		protected override async Task DownloadModuleAsync(EModule module, CancellationToken ct)
 		{
 			List<ManifestEntry> moduleManifest;
 			switch (module)
@@ -287,8 +258,6 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 				{
 					await RefreshModuleManifestAsync(ct, EModule.Launcher);
 
-					this.ModuleInstallFinishedArgs.Module = EModule.Launcher;
-					this.ModuleInstallFailedArgs.Module = EModule.Launcher;
 					moduleManifest = this.FileManifestHandler.GetManifest(EManifestType.Launchpad, false);
 					break;
 				}
@@ -296,8 +265,6 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 				{
 					await RefreshModuleManifestAsync(ct, EModule.Game);
 
-					this.ModuleInstallFinishedArgs.Module = EModule.Game;
-					this.ModuleInstallFailedArgs.Module = EModule.Game;
 					moduleManifest = this.FileManifestHandler.GetManifest(EManifestType.Game, false);
 					break;
 				}
@@ -311,7 +278,6 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			if (moduleManifest == null)
 			{
 				Log.Error($"No manifest was found when installing the module \"{module}\". The server files may be inaccessible or missing.");
-				OnModuleInstallationFailed();
 				return;
 			}
 
@@ -319,13 +285,12 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			// stored in the install cookie.
 
 			// Attempt to parse whatever is inside the install cookie
-			ManifestEntry lastDownloadedFile;
-			if (ManifestEntry.TryParse(File.ReadAllText(ConfigHandler.GetGameCookiePath()), out lastDownloadedFile))
+			if (ManifestEntry.TryParse(File.ReadAllText(ConfigHandler.GetGameCookiePath()), out var lastDownloadedFile))
 			{
 				// Loop through all the entries in the manifest until we encounter
 				// an entry which matches the one in the install cookie
 
-				foreach (ManifestEntry fileEntry in moduleManifest)
+				foreach (var fileEntry in moduleManifest)
 				{
 					if (lastDownloadedFile == fileEntry)
 					{
@@ -336,15 +301,9 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			}
 
 			int downloadedFiles = 0;
-			foreach (ManifestEntry fileEntry in moduleManifest)
+			foreach (var fileEntry in moduleManifest)
 			{
 				++downloadedFiles;
-
-				// Prepare the progress event contents
-				this.ModuleDownloadProgressArgs.IndicatorLabelMessage = GetDownloadIndicatorLabelMessage(Path.GetFileName(fileEntry.RelativePath),
-					downloadedFiles, moduleManifest.Count);
-				OnModuleDownloadProgressChanged();
-
 				await DownloadManifestEntryAsync(ct, fileEntry, module);
 			}
 		}
@@ -358,8 +317,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		/// Downloads the contents of the file at the specified url to the specified local path.
 		/// This method supported resuming a partial file.
 		/// </summary>
-		protected abstract Task DownloadRemoteFileAsync(CancellationToken ct, string url, string localPath, long totalSize = 0, long contentOffset = 0,
-			bool useAnonymousLogin = false);
+		protected abstract Task DownloadRemoteFileAsync(string url, string localPath, CancellationToken ct, long totalSize = 0, long contentOffset = 0);
 
 		/// <summary>
 		/// Determines whether or not the specified module is outdated.
@@ -418,8 +376,6 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		/// </exception>
 		protected virtual async Task DownloadManifestEntryAsync(CancellationToken ct, ManifestEntry fileEntry, EModule module, ManifestEntry oldFileEntry = null)
 		{
-			this.ModuleDownloadProgressArgs.Module = module;
-
 			string baseRemoteURL;
 			string baseLocalPath;
 			switch (module)
@@ -484,14 +440,14 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 
 			if (File.Exists(localPath))
 			{
-				FileInfo fileInfo = new FileInfo(localPath);
+				var fileInfo = new FileInfo(localPath);
 				if (fileInfo.Length != fileEntry.Size)
 				{
 					// If the file is partial, resume the download.
 					if (fileInfo.Length < fileEntry.Size)
 					{
 						Log.Info($"Resuming interrupted file \"{Path.GetFileNameWithoutExtension(fileEntry.RelativePath)}\" at byte {fileInfo.Length}.");
-						await DownloadRemoteFileAsync(ct, remoteURL, localPath, fileEntry.Size, fileInfo.Length);
+						await DownloadRemoteFileAsync(remoteURL, localPath, ct, fileEntry.Size, fileInfo.Length);
 					}
 					else
 					{
@@ -499,13 +455,13 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 						Log.Info($"Restarting interrupted file \"{Path.GetFileNameWithoutExtension(fileEntry.RelativePath)}\": File bigger than expected.");
 
 						File.Delete(localPath);
-						await DownloadRemoteFileAsync(ct, remoteURL, localPath, fileEntry.Size);
+						await DownloadRemoteFileAsync(remoteURL, localPath, ct, fileEntry.Size);
 					}
 				}
 				else
 				{
 					string localHash;
-					using (FileStream fs = File.OpenRead(localPath))
+					using (var fs = File.OpenRead(localPath))
 					{
 						localHash = MD5Handler.GetStreamHash(fs);
 					}
@@ -517,14 +473,14 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 						         $"Hash sum mismatch. Local: {localHash}, Expected: {fileEntry.Hash}");
 
 						File.Delete(localPath);
-						await DownloadRemoteFileAsync(ct, remoteURL, localPath, fileEntry.Size);
+						await DownloadRemoteFileAsync(remoteURL, localPath, ct, fileEntry.Size);
 					}
 				}
 			}
 			else
 			{
 				// No file, download it
-				await DownloadRemoteFileAsync(ct, remoteURL, localPath,fileEntry.Size);
+				await DownloadRemoteFileAsync(remoteURL, localPath,ct, fileEntry.Size);
 			}
 
 			// We've finished the download, so empty the cookie
@@ -555,18 +511,18 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 				}
 			}
 
-			if (File.Exists(manifestPath))
+			if (!File.Exists(manifestPath))
 			{
-				string remoteHash = await GetRemoteModuleManifestChecksumAsync(ct, module);
-				using (Stream file = File.OpenRead(manifestPath))
-				{
-					string localHash = MD5Handler.GetStreamHash(file);
-
-					return remoteHash != localHash;
-				}
+				return true;
 			}
 
-			return true;
+			string remoteHash = await GetRemoteModuleManifestChecksumAsync(ct, module);
+			using (Stream file = File.OpenRead(manifestPath))
+			{
+				string localHash = MD5Handler.GetStreamHash(file);
+
+				return remoteHash != localHash;
+			}
 		}
 
 		/// <summary>
@@ -681,7 +637,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 				Log.Warn("Failed to back up the old launcher manifest (IOException): " + ioex.Message);
 			}
 
-			await DownloadRemoteFileAsync(ct, remoteURL, localPath);
+			await DownloadRemoteFileAsync(remoteURL, localPath, ct);
 		}
 
 		/// <summary>
@@ -696,16 +652,13 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			// Config.GetDoOfficialUpdates is used here since the official update server always allows anonymous logins.
 			string remoteVersion = await ReadRemoteFileAsync(ct, remoteVersionPath, this.Config.GetDoOfficialUpdates());
 
-			Version version;
-			if (Version.TryParse(remoteVersion, out version))
+			if (Version.TryParse(remoteVersion, out var version))
 			{
 				return version;
 			}
-			else
-			{
-				Log.Warn("Failed to parse the remote launcher version. Using the default of 0.0.0 instead.");
-				return new Version("0.0.0");
-			}
+
+			Log.Warn("Failed to parse the remote launcher version. Using the default of 0.0.0 instead.");
+			return new Version("0.0.0");
 		}
 
 		/// <summary>
@@ -717,16 +670,13 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			string remoteVersionPath = $"{this.Config.GetBaseProtocolURL()}/game/{this.Config.GetSystemTarget()}/bin/GameVersion.txt";
 			string remoteVersion = await ReadRemoteFileAsync(ct, remoteVersionPath);
 
-			Version version;
-			if (Version.TryParse(remoteVersion, out version))
+			if (Version.TryParse(remoteVersion, out var version))
 			{
 				return version;
 			}
-			else
-			{
-				Log.Warn("Failed to parse the remote game version. Using the default of 0.0.0 instead.");
-				return new Version("0.0.0");
-			}
+
+			Log.Warn("Failed to parse the remote game version. Using the default of 0.0.0 instead.");
+			return new Version("0.0.0");
 		}
 
 		/// <summary>

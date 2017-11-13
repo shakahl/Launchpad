@@ -106,7 +106,7 @@ namespace Launchpad.Launcher.Handlers.Protocols
 				ConfigHandler.CreateGameCookie();
 
 				// Download Game
-				await DownloadModuleAsync(ct, EModule.Game);
+				await DownloadModuleAsync(EModule.Game, ct);
 
 				// Verify Game
 				await VerifyModuleAsync(ct, EModule.Game);
@@ -125,7 +125,7 @@ namespace Launchpad.Launcher.Handlers.Protocols
 		/// <summary>
 		/// Downloads the latest version of the specified module.
 		/// </summary>
-		protected abstract Task DownloadModuleAsync(CancellationToken ct, EModule module);
+		protected abstract Task DownloadModuleAsync(EModule module, CancellationToken ct);
 
 		/// <summary>
 		/// Updates the specified module to the latest version.

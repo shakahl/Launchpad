@@ -20,9 +20,13 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,6 +47,27 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		/// </summary>
 		private static readonly ILog Log = LogManager.GetLogger(typeof(HTTPProtocolHandler));
 
+		private readonly HttpClient Client;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="AsyncHTTPProtocolHandler"/>.
+		/// </summary>
+		public AsyncHTTPProtocolHandler()
+		{
+			this.Client = new HttpClient
+			(
+				new HttpClientHandler
+				{
+					Credentials = new NetworkCredential
+					(
+						this.Config.GetRemoteUsername(),
+						this.Config.GetRemotePassword()
+					),
+					ClientCertificateOptions = ClientCertificateOption.Automatic
+				}
+			);
+		}
+
 		/// <summary>
 		/// Determines whether this instance can provide patches. Checks for an active connection to the
 		/// patch provider (file server, distributed hash tables, hyperspace compression waves etc.)
@@ -53,44 +78,25 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			ct.ThrowIfCancellationRequested();
 			Log.Info("Pinging remote patching server to determine if we can connect to it.");
 
-			bool bCanConnectToServer = false;
-
+			this.Client.Timeout = TimeSpan.FromSeconds(4);
 			try
 			{
-				HttpWebRequest plainRequest = CreateHttpWebRequest(this.Config.GetBaseHTTPUrl(), this.Config.GetRemoteUsername(), this.Config.GetRemotePassword());
-
-				if (plainRequest == null)
+				using (var response = await this.Client.GetAsync(this.Config.GetBaseHTTPUrl(), ct))
 				{
-					return false;
-				}
-
-				plainRequest.Method = WebRequestMethods.Http.Head;
-				plainRequest.Timeout = 4000;
-
-				try
-				{
-					ct.ThrowIfCancellationRequested();
-					using (HttpWebResponse response = (HttpWebResponse) await plainRequest.GetResponseAsync())
+					if (!response.IsSuccessStatusCode)
 					{
-						if (response.StatusCode == HttpStatusCode.OK)
-						{
-							bCanConnectToServer = true;
-						}
+						Log.Warn($"Could not successfully connect to the patch server: {response.ReasonPhrase}");
+						return false;
 					}
 				}
-				catch (WebException wex)
-				{
-					Log.Warn("Unable to connect to remote patch server (WebException): " + wex.Message);
-					bCanConnectToServer = false;
-				}
-			}
-			catch (WebException wex)
-			{
-				Log.Warn("Unable to connect due a malformed url in the configuration (WebException): " + wex.Message);
-				bCanConnectToServer = false;
-			}
 
-			return bCanConnectToServer;
+				return true;
+			}
+			catch (OperationCanceledException)
+			{
+				Log.Warn("Unable to connect to remote patch server.");
+				return false;
+			}
 		}
 
 		/// <summary>
@@ -142,7 +148,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			string bannerURL = $"{this.Config.GetBaseHTTPUrl()}/launcher/banner.png";
 			string localBannerPath = $"{Path.GetTempPath()}/banner.png";
 
-			await DownloadRemoteFileAsync(ct, bannerURL, localBannerPath);
+			await DownloadRemoteFileAsync(bannerURL, localBannerPath, ct);
 			return new Bitmap(localBannerPath);
 		}
 
@@ -151,99 +157,43 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		/// </summary>
 		/// <param name="url">The remote url of the file..</param>
 		/// <param name="localPath">Local path where the file is to be stored.</param>
+		/// <param name="ct"></param>
 		/// <param name="totalSize">Total size of the file as stated in the manifest.</param>
 		/// <param name="contentOffset">Content offset. If nonzero, appends data to an existing file.</param>
-		/// <param name="useAnonymousLogin">If set to <c>true</c> use anonymous login.</param>
-		protected override async Task DownloadRemoteFileAsync(CancellationToken ct, string url, string localPath, long totalSize = 0, long contentOffset = 0, bool useAnonymousLogin = false)
+		protected override async Task DownloadRemoteFileAsync(string url, string localPath, CancellationToken ct, long totalSize = 0, long contentOffset = 0)
 		{
 			// Early bail out
 			ct.ThrowIfCancellationRequested();
 
-			//clean the url string
+			// Clean the url string
 			string remoteURL = url.Replace(Path.DirectorySeparatorChar, '/');
-
-			string username;
-			string password;
-			if (useAnonymousLogin)
-			{
-				username = "anonymous";
-				password = "anonymous";
-			}
-			else
-			{
-				username = this.Config.GetRemoteUsername();
-				password = this.Config.GetRemotePassword();
-			}
 
 			try
 			{
-				ct.ThrowIfCancellationRequested();
-				HttpWebRequest request = CreateHttpWebRequest(remoteURL, username, password);
-
-				request.Method = WebRequestMethods.Http.Get;
-				request.AddRange(contentOffset);
-
-				using (Stream contentStream = (await request.GetResponseAsync()).GetResponseStream())
+				this.Client.DefaultRequestHeaders.Range.Ranges.Clear();
+				if (contentOffset > 0)
 				{
-					if (contentStream == null)
+					this.Client.DefaultRequestHeaders.Range.Unit = "bytes";
+					this.Client.DefaultRequestHeaders.Range.Ranges.Add(new RangeItemHeaderValue(contentOffset, totalSize));
+				}
+
+				using (var rs = await this.Client.GetStreamAsync(remoteURL))
+				{
+					using (var fs = File.Open(localPath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read))
 					{
-						Log.Error($"Failed to download the remote file at \"{remoteURL}\" (NullReferenceException from the content stream). " +
-								  "Check your internet connection.");
-
-						return;
-					}
-
-					using (FileStream fileStream = contentOffset > 0 ? new FileStream(localPath, FileMode.Append) :
-																		new FileStream(localPath, FileMode.Create))
-					{
-						fileStream.Position = contentOffset;
-						long totalBytesDownloaded = contentOffset;
-
-						long totalFileSize;
-						if (contentStream.CanSeek)
+						if (contentOffset > 0)
 						{
-							totalFileSize = contentOffset + contentStream.Length;
-						}
-						else
-						{
-							totalFileSize = totalSize;
+							fs.Seek(contentOffset, SeekOrigin.Begin);
 						}
 
-						int bufferSize = this.Config.GetDownloadBufferSize();
-						byte[] buffer = new byte[bufferSize];
-
-						while (true)
-						{
-							ct.ThrowIfCancellationRequested();
-							int bytesRead = contentStream.Read(buffer, 0, buffer.Length);
-
-							if (bytesRead == 0)
-							{
-								break;
-							}
-
-							fileStream.Write(buffer, 0, bytesRead);
-
-							totalBytesDownloaded += bytesRead;
-
-							// Report download progress
-							this.ModuleDownloadProgressArgs.ProgressBarMessage = GetDownloadProgressBarMessage(Path.GetFileName(remoteURL),
-								totalBytesDownloaded, totalFileSize);
-							this.ModuleDownloadProgressArgs.ProgressFraction = totalBytesDownloaded / (double)totalFileSize;
-							OnModuleDownloadProgressChanged();
-						}
-
-						fileStream.Flush();
+						await rs.CopyToAsync(fs);
 					}
 				}
 			}
-			catch (WebException wex)
+			catch (OperationCanceledException ocex)
 			{
-				Log.Error($"Failed to download the remote file at \"{remoteURL}\" (WebException): {wex.Message}");
-			}
-			catch (IOException ioex)
-			{
-				Log.Error($"Failed to download the remote file at \"{remoteURL}\" (IOException): {ioex.Message}");
+				Log.Error($"Request failed: {ocex}");
+				throw;
 			}
 		}
 
@@ -258,106 +208,17 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		{
 			// Early bail out
 			ct.ThrowIfCancellationRequested();
-			
+
 			string remoteURL = url.Replace(Path.DirectorySeparatorChar, '/');
 
-			string username;
-			string password;
-			if (useAnonymousLogin)
-			{
-				username = "anonymous";
-				password = "anonymous";
-
-			}
-			else
-			{
-				username = this.Config.GetRemoteUsername();
-				password = this.Config.GetRemotePassword();
-			}
-
 			try
 			{
-				ct.ThrowIfCancellationRequested();
-				HttpWebRequest request = CreateHttpWebRequest(remoteURL, username, password);
-
-				request.Method = WebRequestMethods.Http.Get;
-
-				string data = "";
-				using (Stream remoteStream = (await request.GetResponseAsync()).GetResponseStream())
-				{
-					// Drop out early if the stream wasn't present
-					if (remoteStream == null)
-					{
-						Log.Error($"Failed to read the contents of remote file \"{remoteURL}\": " +
-						          "Remote stream was null. This could be due to a network interruption " +
-						          "or issues with the remote file.");
-
-						return string.Empty;
-					}
-
-					int bufferSize = this.Config.GetDownloadBufferSize();
-					byte[] buffer = new byte[bufferSize];
-
-					while (true)
-					{
-						ct.ThrowIfCancellationRequested();
-						int bytesRead = remoteStream.Read(buffer, 0, buffer.Length);
-
-						if (bytesRead == 0)
-						{
-							break;
-						}
-
-						data += Encoding.UTF8.GetString(buffer, 0, bytesRead);
-					}
-				}
-
-				return data.RemoveLineSeparatorsAndNulls();
+				return await this.Client.GetStringAsync(remoteURL);
 			}
-			catch (WebException wex)
+			catch (OperationCanceledException ocex)
 			{
-				Log.Error($"Failed to read the contents of remote file \"{remoteURL}\" (WebException): {wex.Message}");
-				return string.Empty;
-			}
-			catch (NullReferenceException nex)
-			{
-				Log.Error("Failed to establish a network connection, or the connection was interrupted during the download (NullReferenceException): " + nex.Message);
-				return string.Empty;
-			}
-		}
-
-		/// <summary>
-		/// Creates a HTTP web request.
-		/// </summary>
-		/// <returns>The HTTP web request.</returns>
-		/// <param name="url">url of the desired remote object.</param>
-		/// <param name="username">The username used for authentication.</param>
-		/// <param name="password">The password used for authentication.</param>
-		private static HttpWebRequest CreateHttpWebRequest(string url, string username, string password)
-		{
-			try
-			{
-				HttpWebRequest request = (HttpWebRequest)WebRequest.Create(new Uri(url));
-				request.Proxy = null;
-				request.Credentials = new NetworkCredential(username, password);
-
-				return request;
-			}
-			catch (WebException wex)
-			{
-				Log.Warn("Unable to create a WebRequest for the specified file (WebException): " + wex.Message);
-				return null;
-			}
-			catch (ArgumentException aex)
-			{
-				Log.Warn("Unable to create a WebRequest for the specified file (ArgumentException): " + aex.Message);
-				return null;
-			}
-			catch (UriFormatException uex)
-			{
-				Log.Warn("Unable to create a WebRequest for the specified file (UriFormatException): " + uex.Message + "\n" +
-					"You may need to add \"http://\" before the url in the config.");
-				return null;
+				Log.Error($"Request failed: {ocex}");
+				throw;
 			}
 		}
 
@@ -369,29 +230,21 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		private async Task<bool> DoesRemoteDirectoryOrFileExistAsync(string url)
 		{
 			string cleanURL = url.Replace(Path.DirectorySeparatorChar, '/');
-			HttpWebRequest request = CreateHttpWebRequest(cleanURL, this.Config.GetRemoteUsername(), this.Config.GetRemotePassword());
 
-			request.Method = WebRequestMethods.Http.Head;
-			HttpWebResponse response = null;
 			try
 			{
-				response = (HttpWebResponse) await request.GetResponseAsync();
-				if (response.StatusCode != HttpStatusCode.OK)
+				using (var response = await this.Client.GetAsync(cleanURL, HttpCompletionOption.ResponseHeadersRead))
 				{
-					return false;
+					if (response.StatusCode != HttpStatusCode.OK)
+					{
+						return false;
+					}
 				}
 			}
-			catch (WebException wex)
+			catch (OperationCanceledException ocex)
 			{
-				response = (HttpWebResponse)wex.Response;
-				if (response.StatusCode == HttpStatusCode.NotFound)
-				{
-					return false;
-				}
-			}
-			finally
-			{
-				response?.Dispose();
+				Log.Error($"Request failed: {ocex}");
+				throw;
 			}
 
 			return true;
