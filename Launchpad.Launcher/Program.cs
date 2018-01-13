@@ -78,7 +78,7 @@ namespace Launchpad.Launcher
 					return;
 				}
 
-				if (loginDialog.Response == AuthenticationResponse.OK)
+				if (loginDialog.AuthResponse == AuthenticationResponse.OK)
 				{
 					break;
 				}

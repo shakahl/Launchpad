@@ -11,7 +11,7 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 		private readonly GalaxiesAuthenticatorClient Client;
 		private readonly CancellationTokenSource TokenSource;
 
-		public AuthenticationResponse Response { get; set; }
+		public AuthenticationResponse AuthResponse { get; set; }
 
 		public bool WasSuccessful { get; private set; }
 		public bool WasCancelled { get; private set; }
@@ -30,9 +30,9 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 
 			this.Throbber.Text = "Logging in...";
 
-			this.Response = await this.Client.LoginAsync(this.UsernameEntry.Text, this.PasswordEntry.Text, this.TokenSource.Token);
+			this.AuthResponse = await this.Client.LoginAsync(this.UsernameEntry.Text, this.PasswordEntry.Text, this.TokenSource.Token);
 
-			switch (this.Response)
+			switch (this.AuthResponse)
 			{
 				case AuthenticationResponse.Timeout:
 				{
