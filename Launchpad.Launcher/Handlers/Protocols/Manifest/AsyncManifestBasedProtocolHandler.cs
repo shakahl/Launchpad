@@ -111,8 +111,8 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		/// </exception>
 		public override async Task UpdateModuleAsync(CancellationToken ct, EModule module)
 		{
-			List<ManifestEntry> manifest;
-			List<ManifestEntry> oldManifest;
+			IReadOnlyList<ManifestEntry> manifest;
+			IReadOnlyList<ManifestEntry> oldManifest;
 			switch (module)
 			{
 				case EModule.Launcher:
@@ -257,14 +257,14 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 				{
 					await RefreshModuleManifestAsync(ct, EModule.Launcher);
 
-					moduleManifest = this.FileManifestHandler.GetManifest(EManifestType.Launchpad, false);
+					moduleManifest = new List<ManifestEntry>(this.FileManifestHandler.GetManifest(EManifestType.Launchpad, false));
 					break;
 				}
 				case EModule.Game:
 				{
 					await RefreshModuleManifestAsync(ct, EModule.Game);
 
-					moduleManifest = this.FileManifestHandler.GetManifest(EManifestType.Game, false);
+					moduleManifest = new List<ManifestEntry>(this.FileManifestHandler.GetManifest(EManifestType.Game, false));
 					break;
 				}
 				default:
@@ -274,7 +274,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 				}
 			}
 
-			if (moduleManifest == null)
+			if (moduleManifest.Count <= 0)
 			{
 				Log.Error($"No manifest was found when installing the module \"{module}\". The server files may be inaccessible or missing.");
 				return;
