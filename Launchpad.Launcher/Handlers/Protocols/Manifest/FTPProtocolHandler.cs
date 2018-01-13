@@ -307,7 +307,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 							// Report download progress
 							this.ModuleDownloadProgressArgs.ProgressBarMessage = GetDownloadProgressBarMessage(Path.GetFileName(remoteURL),
 								totalBytesDownloaded, fileSize);
-							this.ModuleDownloadProgressArgs.ProgressFraction = (double) totalBytesDownloaded / (double) fileSize;
+							this.ModuleDownloadProgressArgs.ProgressFraction = totalBytesDownloaded / (double) fileSize;
 							OnModuleDownloadProgressChanged();
 						}
 						else
@@ -330,7 +330,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 								// Report download progress
 								this.ModuleDownloadProgressArgs.ProgressBarMessage = GetDownloadProgressBarMessage(Path.GetFileName(remoteURL),
 									totalBytesDownloaded, fileSize);
-								this.ModuleDownloadProgressArgs.ProgressFraction = (double) totalBytesDownloaded / (double) fileSize;
+								this.ModuleDownloadProgressArgs.ProgressFraction = totalBytesDownloaded / (double) fileSize;
 								OnModuleDownloadProgressChanged();
 							}
 						}

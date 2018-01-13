@@ -324,7 +324,6 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			try
 			{
 				HttpWebRequest request = (HttpWebRequest)WebRequest.Create(new Uri(url));
-				request.Proxy = null;
 				request.Credentials = new NetworkCredential(username, password);
 
 				return request;

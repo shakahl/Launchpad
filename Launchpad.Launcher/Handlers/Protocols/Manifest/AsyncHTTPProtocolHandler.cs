@@ -20,18 +20,14 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Security.Policy;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using log4net;
-using Launchpad.Common;
 using Launchpad.Common.Enums;
 
 namespace Launchpad.Launcher.Handlers.Protocols.Manifest
@@ -202,6 +198,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		/// of all \r, \n and \0 characters before it is returned.
 		/// </summary>
 		/// <returns>The contents of the remote file.</returns>
+		/// <param name="ct">The cancellation token to use.</param>
 		/// <param name="url">The remote url of the file.</param>
 		/// <param name="useAnonymousLogin">If set to <c>true</c> use anonymous login.</param>
 		protected override async Task<string> ReadRemoteFileAsync(CancellationToken ct, string url, bool useAnonymousLogin = false)

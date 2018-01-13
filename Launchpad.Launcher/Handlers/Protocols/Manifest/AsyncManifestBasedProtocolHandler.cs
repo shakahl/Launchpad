@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Policy;
 using System.Threading;
 using System.Threading.Tasks;
 using log4net;
@@ -105,6 +104,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		/// <summary>
 		/// Updates the specified module to the latest version.
 		/// </summary>
+		/// <param name="ct">The cancellation token to use.</param>
 		/// <param name="module">The module to update.</param>
 		/// <exception cref="ArgumentOutOfRangeException">
 		/// Will be thrown if the <see cref="EModule"/> passed to the function is not a valid value.
@@ -186,7 +186,6 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 			catch (IOException ioex)
 			{
 				Log.Warn($"Updating of {module} files failed (IOException): " + ioex.Message);
-				return;
 			}
 		}
 
@@ -365,6 +364,7 @@ namespace Launchpad.Launcher.Handlers.Protocols.Manifest
 		/// <summary>
 		/// Downloads the file referred to by the specifed manifest entry.
 		/// </summary>
+		/// <param name="ct">The cancellation token to use.</param>
 		/// <param name="fileEntry">The entry to download.</param>
 		/// <param name="module">The module that the entry belongs to.</param>
 		/// <param name="oldFileEntry">The old entry, if one exists.</param>

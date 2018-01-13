@@ -19,7 +19,6 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
 using System.Drawing;
 using System.IO;
 using System.Threading;
@@ -130,6 +129,7 @@ namespace Launchpad.Launcher.Handlers.Protocols
 		/// <summary>
 		/// Updates the specified module to the latest version.
 		/// </summary>
+		/// <param name="ct">The cancellation token to use.</param>
 		/// <param name="module">The module to update.</param>
 		public abstract Task UpdateModuleAsync(CancellationToken ct, EModule module);
 	}
