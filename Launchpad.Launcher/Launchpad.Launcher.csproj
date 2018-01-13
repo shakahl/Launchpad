@@ -64,6 +64,10 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Galaxies.Auth\Galaxies.Auth.csproj" />
     <ProjectReference Include="..\Launchpad.Common\Launchpad.Common.csproj" />
   </ItemGroup>
+  <Target Name="DeleteNetHttpMono" AfterTargets="AfterBuild">
+    <Delete Files="$(OutputPath)\System.Net.Http.dll" Condition="'$(OS)' == 'Unix'" />
+  </Target>
 </Project>

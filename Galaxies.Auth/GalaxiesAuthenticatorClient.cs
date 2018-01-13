@@ -21,6 +21,7 @@
 
 using System;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Galaxies.Auth.Extensions;
 using static Galaxies.Auth.AuthenticationResponse;
@@ -44,7 +45,16 @@ namespace Galaxies.Auth
 		/// <param name="username">The username.</param>
 		/// <param name="password">The password.</param>
 		/// <returns>The response returned by the server.</returns>
-		public async Task<AuthenticationResponse> LoginAsync(string username, string password)
+		public Task<AuthenticationResponse> LoginAsync(string username, string password) => LoginAsync(username, password, CancellationToken.None);
+
+		/// <summary>
+		/// Attempts to log the user in using the given credentials.
+		/// </summary>
+		/// <param name="username">The username.</param>
+		/// <param name="password">The password.</param>
+		/// <param name="ct">A cancellation token, which can be used to cancel the request.</param>
+		/// <returns>The response returned by the server.</returns>
+		public async Task<AuthenticationResponse> LoginAsync(string username, string password, CancellationToken ct)
 		{
 			// Build query string
 			var query = this.BaseAuthenticationURL
@@ -54,11 +64,17 @@ namespace Galaxies.Auth
 			string response;
 			try
 			{
-				response = await Client.GetStringAsync(query);
+				var httpResponse = await Client.GetAsync(query, ct);
+				response = await httpResponse.Content.ReadAsStringAsync();
 			}
 			catch (TaskCanceledException)
 			{
-				return Timeout;
+				if (ct.IsCancellationRequested)
+				{
+					return Cancelled;
+				}
+
+				return AuthenticationResponse.Timeout;
 			}
 
 			if (!int.TryParse(response, out int resultValue))

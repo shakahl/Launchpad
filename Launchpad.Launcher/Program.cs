@@ -23,7 +23,10 @@ using System;
 using Launchpad.Launcher.Interface;
 using Launchpad.Launcher.Handlers;
 using System.IO;
+using Galaxies.Auth;
+using Gtk;
 using log4net;
+using Launchpad.Launcher.Interface.LoginDialog;
 
 namespace Launchpad.Launcher
 {
@@ -64,6 +67,31 @@ namespace Launchpad.Launcher
 
 			// Run the GTK UI
 			Gtk.Application.Init();
+
+			// Run the login window
+			var loginDialog = new LoginDialog();
+			while (!loginDialog.WasSuccessful)
+			{
+				var response = (ResponseType)loginDialog.Run();
+				if (response == ResponseType.DeleteEvent)
+				{
+					return;
+				}
+
+				if (loginDialog.Response == AuthenticationResponse.OK)
+				{
+					break;
+				}
+
+				if (loginDialog.WasCancelled)
+				{
+					return;
+				}
+
+				loginDialog.Hide();
+			}
+			loginDialog.Destroy();
+
 			MainWindow win = new MainWindow();
 			win.Show();
 			Gtk.Application.Run();

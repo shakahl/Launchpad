@@ -24,12 +24,16 @@ namespace Galaxies.Auth
 	public enum AuthenticationResponse
 	{
 		// Internal responses
+		Cancelled = -3,
 		Timeout = -2,
 		InvalidServerResponse = -1,
+
+		None = 0,
 
 		// Valid server responses
 		OK = 1,
 		InvalidUsername = 2,
-		InvalidPassword = 999
+		InvalidPassword = 999,
+
 	}
 }

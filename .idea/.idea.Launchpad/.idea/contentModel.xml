@@ -269,6 +269,9 @@
             <e p="Changelog.cs" t="Include" />
             <e p="WindowsBrowser.cs" t="Include" />
           </e>
+          <e p="LoginDialog" t="Include">
+            <e p="LoginDialog.cs" t="Include" />
+          </e>
           <e p="MainWindow.cs" t="Include" />
           <e p="gtk3" t="Include">
             <e p="Launchpad.glade" t="Include" />
@@ -292,6 +295,7 @@
         <e p="app.manifest" t="Include" />
         <e p="bin" t="ExcludeRecursive" />
         <e p="gtk-gui" t="Include">
+          <e p="Launchpad.Launcher.Interface.LoginDialog.cs" t="Include" />
           <e p="Launchpad.Launcher.Interface.MainWindow.cs" t="Include" />
           <e p="generated.cs" t="Include" />
           <e p="gui.stetic" t="Include" />
