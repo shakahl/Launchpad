@@ -2,9 +2,54 @@
 <project version="4">
   <component name="ContentModelStore">
     <e p="$USER_HOME$/.Rider2017.3/system/resharper-host/local/Transient/ReSharperHost/v11/SolutionCaches/_Launchpad.-586682344.00" t="ExcludeRecursive" />
+    <e p="$USER_HOME$/.nuget/packages/nunit3testadapter/3.9.0/build/net35/Mono.Cecil.Mdb.dll" t="Include" />
+    <e p="$USER_HOME$/.nuget/packages/nunit3testadapter/3.9.0/build/net35/Mono.Cecil.Pdb.dll" t="Include" />
+    <e p="$USER_HOME$/.nuget/packages/nunit3testadapter/3.9.0/build/net35/Mono.Cecil.Rocks.dll" t="Include" />
+    <e p="$USER_HOME$/.nuget/packages/nunit3testadapter/3.9.0/build/net35/Mono.Cecil.dll" t="Include" />
+    <e p="$USER_HOME$/.nuget/packages/nunit3testadapter/3.9.0/build/net35/NUnit3.TestAdapter.dll" t="Include" />
+    <e p="$USER_HOME$/.nuget/packages/nunit3testadapter/3.9.0/build/net35/nunit.engine.api.dll" t="Include" />
+    <e p="$USER_HOME$/.nuget/packages/nunit3testadapter/3.9.0/build/net35/nunit.engine.dll" t="Include" />
+    <e p="$USER_HOME$/.nuget/packages/xunit.runner.visualstudio/2.3.1/build/netcoreapp1.0/xunit.runner.reporters.netcoreapp10.dll" t="Include" />
+    <e p="$USER_HOME$/.nuget/packages/xunit.runner.visualstudio/2.3.1/build/netcoreapp1.0/xunit.runner.utility.netcoreapp10.dll" t="Include" />
+    <e p="$USER_HOME$/.nuget/packages/xunit.runner.visualstudio/2.3.1/build/netcoreapp1.0/xunit.runner.visualstudio.dotnetcore.testadapter.dll" t="Include" />
     <e p="$PROJECT_DIR$" t="IncludeFlat">
       <e p=".gitignore" t="Include" />
       <e p=".travis.yml" t="Include" />
+      <e p="Galaxies.Auth" t="IncludeRecursive">
+        <e p="AuthenticationResponse.cs" t="Include" />
+        <e p="Extensions" t="Include">
+          <e p="UriExtensions.cs" t="Include" />
+        </e>
+        <e p="Galaxies.Auth.csproj" t="IncludeRecursive" />
+        <e p="GalaxiesAuthenticatorClient.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="Galaxies.Auth.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+      </e>
+      <e p="Galaxies.Auth.Tests" t="IncludeRecursive">
+        <e p="Content" t="Include">
+          <e p="swg.credentials" t="Include" />
+        </e>
+        <e p="Galaxies.Auth.Tests.csproj" t="IncludeRecursive" />
+        <e p="GalaxiesAuthenticatorClientTests.cs" t="Include" />
+        <e p="TestBases" t="Include">
+          <e p="GalaxiesAuthenticatorClientTestBase.cs" t="Include" />
+        </e>
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.0" t="Include">
+              <e p="Galaxies.Auth.Tests.AssemblyInfo.cs" t="Include" />
+              <e p="Galaxies.Auth.Tests.Program.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+      </e>
       <e p="LICENSE" t="Include" />
       <e p="Launchpad.Common" t="IncludeRecursive">
         <e p="Enums" t="Include">

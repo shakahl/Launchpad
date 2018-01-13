@@ -21,6 +21,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Launchpad.Tests", "Launchpa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Launchpad.Common", "Launchpad.Common\Launchpad.Common.csproj", "{DDC53837-BA5A-41F3-8258-6224F3526A52}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Galaxies.Auth", "Galaxies.Auth\Galaxies.Auth.csproj", "{5614DD7F-FEA4-4E0C-96AB-82F26DAD4724}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Galaxies.Auth.Tests", "Galaxies.Auth.Tests\Galaxies.Auth.Tests.csproj", "{291754AB-7485-40AF-B212-7C7406157039}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -48,6 +52,18 @@ Global
 		{DDC53837-BA5A-41F3-8258-6224F3526A52}.Debug|x86.Build.0 = Debug|x86
 		{DDC53837-BA5A-41F3-8258-6224F3526A52}.Release|x86.ActiveCfg = Release|x86
 		{DDC53837-BA5A-41F3-8258-6224F3526A52}.Release|x86.Build.0 = Release|x86
+		{5614DD7F-FEA4-4E0C-96AB-82F26DAD4724}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5614DD7F-FEA4-4E0C-96AB-82F26DAD4724}.Debug|x86.Build.0 = Debug|Any CPU
+		{5614DD7F-FEA4-4E0C-96AB-82F26DAD4724}.Release|x86.ActiveCfg = Release|Any CPU
+		{5614DD7F-FEA4-4E0C-96AB-82F26DAD4724}.Release|x86.Build.0 = Release|Any CPU
+		{5614DD7F-FEA4-4E0C-96AB-82F26DAD4724}.Default|x86.ActiveCfg = Debug|Any CPU
+		{5614DD7F-FEA4-4E0C-96AB-82F26DAD4724}.Default|x86.Build.0 = Debug|Any CPU
+		{291754AB-7485-40AF-B212-7C7406157039}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{291754AB-7485-40AF-B212-7C7406157039}.Debug|x86.Build.0 = Debug|Any CPU
+		{291754AB-7485-40AF-B212-7C7406157039}.Release|x86.ActiveCfg = Release|Any CPU
+		{291754AB-7485-40AF-B212-7C7406157039}.Release|x86.Build.0 = Release|Any CPU
+		{291754AB-7485-40AF-B212-7C7406157039}.Default|x86.ActiveCfg = Debug|Any CPU
+		{291754AB-7485-40AF-B212-7C7406157039}.Default|x86.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0
