@@ -13,7 +13,6 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 
 		public AuthenticationResponse AuthResponse { get; set; }
 
-		public bool WasSuccessful { get; private set; }
 		public bool WasCancelled { get; private set; }
 
 		public LoginDialog()
@@ -37,13 +36,11 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 				case AuthenticationResponse.Timeout:
 				{
 					this.Throbber.Text = "The login request timed out.";
-					this.WasSuccessful = false;
 					break;
 				}
 				case AuthenticationResponse.InvalidServerResponse:
 				{
 					this.Throbber.Text = "The server responded with an invalid code.";
-					this.WasSuccessful = false;
 					break;
 				}
 				case AuthenticationResponse.OK:
@@ -51,7 +48,6 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 					this.Throbber.Text = "Login successful.";
 
 					this.WasCancelled = false;
-					this.WasSuccessful = true;
 
 					Respond(ResponseType.Ok);
 
@@ -60,20 +56,17 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 				case AuthenticationResponse.InvalidUsername:
 				{
 					this.Throbber.Text = "Invalid username.";
-					this.WasSuccessful = false;
 					break;
 				}
 				case AuthenticationResponse.InvalidPassword:
 				{
 					this.Throbber.Text = "Invalid password.";
-					this.WasSuccessful = false;
 					break;
 				}
 				case AuthenticationResponse.Cancelled:
 				{
 					this.Throbber.Text = string.Empty;
 					this.WasCancelled = true;
-					this.WasSuccessful = false;
 					break;
 				}
 			}
@@ -100,7 +93,6 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 		private void OnCancelClicked(object sender, EventArgs e)
 		{
 			this.WasCancelled = true;
-			this.WasSuccessful = false;
 
 			this.TokenSource.Cancel();
 

@@ -87,14 +87,16 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 				RightPadding = 6
 			};
 
-			this.UsernameEntry = new Entry
+			this.UsernameEntry = new PlaceholderEntry
 			{
-				TooltipText = "Username"
+				TooltipText = "Username",
+				PlaceholderText = "Username"
 			};
 
-			this.PasswordEntry = new Entry
+			this.PasswordEntry = new PlaceholderEntry
 			{
 				TooltipText = "Password",
+				PlaceholderText = "Password",
 				Visibility = false
 			};
 

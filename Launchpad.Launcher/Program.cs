@@ -70,25 +70,15 @@ namespace Launchpad.Launcher
 
 			// Run the login window
 			var loginDialog = new LoginDialog();
-			while (!loginDialog.WasSuccessful)
+			var response = (ResponseType)loginDialog.Run();
+			if (response == ResponseType.DeleteEvent)
 			{
-				var response = (ResponseType)loginDialog.Run();
-				if (response == ResponseType.DeleteEvent)
-				{
-					return;
-				}
+				return;
+			}
 
-				if (loginDialog.AuthResponse == AuthenticationResponse.OK)
-				{
-					break;
-				}
-
-				if (loginDialog.WasCancelled)
-				{
-					return;
-				}
-
-				loginDialog.Hide();
+			if (loginDialog.WasCancelled)
+			{
+				return;
 			}
 			loginDialog.Destroy();
 
