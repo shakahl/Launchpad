@@ -19,12 +19,29 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 			Color.Parse("gray", ref this.PlaceholderColor);
 		}
 
+		public string GetText()
+		{
+			if (this.Default)
+			{
+				return string.Empty;
+			}
+
+			return this.Text;
+		}
+
 		protected override void OnShown()
 		{
-			this.Text = this.PlaceholderText;
-			this.ModifyText(StateType.Normal, this.PlaceholderColor);
+			if (string.IsNullOrEmpty(this.Text))
+			{
+				this.Text = this.PlaceholderText;
+				this.ModifyText(StateType.Normal, this.PlaceholderColor);
 
-			this.Default = true;
+				this.Default = true;
+			}
+			else
+			{
+				this.Default = false;
+			}
 
 			base.OnShown();
 		}
