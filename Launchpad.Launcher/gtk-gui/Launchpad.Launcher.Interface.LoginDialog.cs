@@ -43,6 +43,13 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 
 			BindEvents();
 
+			Setup();
+
+			ShowAll();
+		}
+
+		private void Setup()
+		{
 			this.LoginButton.GrabDefault();
 
 			this.RememberUsernameCheckButton.Active = this.Config.GetRememberMe();
@@ -50,8 +57,6 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 			{
 				this.UsernameEntry.Text = this.Config.GetGalaxiesLoginUsername();
 			}
-
-			ShowAll();
 		}
 
 		private void BindEvents()
