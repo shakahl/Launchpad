@@ -109,7 +109,7 @@ namespace Launchpad.Launcher.Interface.ChangelogBrowser
 			if (!this.IsNavigatingFromCode)
 			{
 				webBrowserNavigatingEventArgs.Cancel = true;
-				Process.Start(webBrowserNavigatingEventArgs.Url.ToString());
+				//Process.Start(webBrowserNavigatingEventArgs.Url.ToString());
 			}
 			else
 			{
