@@ -1,13 +1,17 @@
 ﻿using System;
+using System.Configuration;
 using System.Threading;
 using Galaxies.Auth;
 using GLib;
 using Gtk;
+using Launchpad.Launcher.Handlers;
 
 namespace Launchpad.Launcher.Interface.LoginDialog
 {
 	public sealed partial class LoginDialog : Gtk.Dialog
 	{
+		private readonly ConfigHandler Config = ConfigHandler.Instance;
+
 		private readonly GalaxiesAuthenticatorClient Client;
 		private readonly CancellationTokenSource TokenSource;
 
@@ -29,7 +33,7 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 
 			this.Throbber.Text = "Logging in...";
 
-			this.AuthResponse = await this.Client.LoginAsync(this.UsernameEntry.Text, this.PasswordEntry.Text, this.TokenSource.Token);
+			this.AuthResponse = await this.Client.LoginAsync(this.UsernameEntry.GetText(), this.PasswordEntry.GetText(), this.TokenSource.Token);
 
 			switch (this.AuthResponse)
 			{
@@ -48,6 +52,12 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 					this.Throbber.Text = "Login successful.";
 
 					this.WasCancelled = false;
+
+					// Save the username
+					if (this.Config.GetRememberMe())
+					{
+						this.Config.SetGalaxiesLoginUsername(this.UsernameEntry.GetText());
+					}
 
 					Respond(ResponseType.Ok);
 
@@ -78,6 +88,8 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 		{
 			this.LoginButton.Sensitive = false;
 
+			this.RememberUsernameCheckButton.Sensitive = false;
+
 			this.UsernameEntry.Sensitive = false;
 			this.PasswordEntry.Sensitive = false;
 		}
@@ -85,6 +97,8 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 		private void UnlockUI()
 		{
 			this.LoginButton.Sensitive = true;
+
+			this.RememberUsernameCheckButton.Sensitive = true;
 
 			this.UsernameEntry.Sensitive = true;
 			this.PasswordEntry.Sensitive = true;
@@ -97,6 +111,11 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 			this.TokenSource.Cancel();
 
 			Respond(ResponseType.Cancel);
+		}
+
+		private void OnRememberMeToggled(object sender, EventArgs e)
+		{
+			this.Config.SetRememberMe(this.RememberUsernameCheckButton.Active);
 		}
 	}
 }

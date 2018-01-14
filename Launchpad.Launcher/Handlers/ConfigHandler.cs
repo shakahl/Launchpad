@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security;
 using Launchpad.Launcher.Handlers.Protocols;
 using System.Security.Cryptography;
 using System.Text;
@@ -77,6 +78,7 @@ namespace Launchpad.Launcher.Handlers
 		private const string DefaultUseOfficialUpdates = "true";
 		private const string DefaultAllowAnonymousStatus = "true";
 		private const string DefaultBufferSize = "8192";
+		private const string DefaultRememberMeSetting = "true";
 
 		private const string ConfigurationFolderName = "Config";
 		private const string ConfigurationFileName = "LauncherConfig";
@@ -88,6 +90,7 @@ namespace Launchpad.Launcher.Handlers
 		private const string SectionNameHTTP = "HTTP";
 		private const string SectionNameBitTorrent = "BitTorrent";
 		private const string SectionNameLaunchpad = "Launchpad";
+		private const string SectionNameUser = "User";
 
 		private const string LocalVersionKey = "LauncherVersion";
 		private const string LocalGameNameKey = "GameName";
@@ -107,6 +110,9 @@ namespace Launchpad.Launcher.Handlers
 
 		private const string LaunchpadOfficialUpdatesKey = "bOfficialUpdates";
 		private const string LaunchpadAnonymousStatsKey = "bAllowAnonymousStats";
+
+		private const string RememberMeSettingKey = "bShouldRememberUsername";
+		private const string UsernameKey = "Username";
 
 		/// <summary>
 		/// The singleton Instance. Will always point to one shared object.
@@ -212,6 +218,7 @@ namespace Launchpad.Launcher.Handlers
 						data.Sections.AddSection(SectionNameHTTP);
 						data.Sections.AddSection(SectionNameBitTorrent);
 						data.Sections.AddSection(SectionNameLaunchpad);
+						data.Sections.AddSection(SectionNameUser);
 
 						data[SectionNameLocal].AddKey(LocalVersionKey, defaultLauncherVersion.ToString());
 						data[SectionNameLocal].AddKey(LocalGameNameKey, DefaultGameName);
@@ -235,6 +242,9 @@ namespace Launchpad.Launcher.Handlers
 
 						data[SectionNameLaunchpad].AddKey(LaunchpadOfficialUpdatesKey, DefaultUseOfficialUpdates);
 						data[SectionNameLaunchpad].AddKey(LaunchpadAnonymousStatsKey, DefaultAllowAnonymousStatus);
+
+						data[SectionNameUser].AddKey(RememberMeSettingKey, DefaultRememberMeSetting);
+						data[SectionNameUser].AddKey(UsernameKey, string.Empty);
 
 						WriteConfig(parser, data);
 					}
@@ -365,6 +375,16 @@ namespace Launchpad.Launcher.Handlers
 						data[SectionNameRemote].AddKey(RemoteBufferSizeKey, DefaultBufferSize);
 					}
 					// End January 20
+
+					// January 14 - 2017
+					if (!data.Sections.ContainsSection(SectionNameUser))
+					{
+						data.Sections.AddSection(SectionNameUser);
+
+						data[SectionNameUser].AddKey(RememberMeSettingKey, DefaultRememberMeSetting);
+						data[SectionNameUser].AddKey(UsernameKey, string.Empty);
+					}
+					// End January 14
 
 					// ...
 					WriteConfig(parser, data);
@@ -1368,6 +1388,120 @@ namespace Launchpad.Launcher.Handlers
 						IniData data = parser.ReadFile(GetConfigPath());
 
 						data[SectionNameLocal][LocalMainExecutableNameKey] = mainExecutableName;
+
+						WriteConfig(parser, data);
+					}
+					catch (IOException ioex)
+					{
+						Log.Warn("Could not set the main executable name (IOException): " + ioex.Message);
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// Gets if the username should be remembered.
+		/// </summary>
+		/// <returns>true if it should; otherwise, false.</returns>
+		public bool GetRememberMe()
+		{
+			lock (this.ReadLock)
+			{
+				try
+				{
+					FileIniDataParser parser = new FileIniDataParser();
+
+					string configPath = GetConfigPath();
+					IniData data = parser.ReadFile(configPath);
+
+					string value = data[SectionNameUser][RememberMeSettingKey];
+
+					if (!bool.TryParse(value, out bool result))
+					{
+						return false;
+					}
+
+					return result;
+				}
+				catch (IOException ioex)
+				{
+					Log.Warn("Could not get the main executable name (IOException): " + ioex.Message);
+					return false;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Sets if the username should be remembered.
+		/// </summary>
+		/// <param name="value">The new main executable name.</param>
+		public void SetRememberMe(bool value)
+		{
+			lock (this.ReadLock)
+			{
+				lock (this.WriteLock)
+				{
+					try
+					{
+						FileIniDataParser parser = new FileIniDataParser();
+						IniData data = parser.ReadFile(GetConfigPath());
+
+						data[SectionNameUser][RememberMeSettingKey] = value.ToString();
+
+						WriteConfig(parser, data);
+					}
+					catch (IOException ioex)
+					{
+						Log.Warn("Could not set the main executable name (IOException): " + ioex.Message);
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// Gets the saved username for the galaxies login.
+		/// </summary>
+		/// <returns>The username.</returns>
+		public string GetGalaxiesLoginUsername()
+		{
+			lock (this.ReadLock)
+			{
+				try
+				{
+					FileIniDataParser parser = new FileIniDataParser();
+
+					string configPath = GetConfigPath();
+					IniData data = parser.ReadFile(configPath);
+
+					string mainExecutableName = data[SectionNameUser][UsernameKey];
+
+					return mainExecutableName;
+				}
+				catch (IOException ioex)
+				{
+					Log.Warn("Could not get the main executable name (IOException): " + ioex.Message);
+					return string.Empty;
+				}
+			}
+		}
+
+
+		/// <summary>
+		/// Sets the saved username for the galaxies login.
+		/// </summary>
+		/// <param name="username">The new username.</param>
+		public void SetGalaxiesLoginUsername(string username)
+		{
+			lock (this.ReadLock)
+			{
+				lock (this.WriteLock)
+				{
+					try
+					{
+						FileIniDataParser parser = new FileIniDataParser();
+						IniData data = parser.ReadFile(GetConfigPath());
+
+						data[SectionNameUser][UsernameKey] = username;
 
 						WriteConfig(parser, data);
 					}

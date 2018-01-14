@@ -9,13 +9,16 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 		private Alignment UsernameAlignment;
 		private Alignment PasswordAlignment;
 
-		private Entry UsernameEntry;
-		private Entry PasswordEntry;
+		private PlaceholderEntry UsernameEntry;
+		private PlaceholderEntry PasswordEntry;
 
 		private Alignment ButtonBoxAlignment;
 
 		private Alignment ThrobberAlignment;
 		private Label Throbber;
+
+		private Alignment RememberUsernameAlignment;
+		private CheckButton RememberUsernameCheckButton;
 
 		private HBox ButtonBox;
 
@@ -40,11 +43,20 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 
 			BindEvents();
 
+			this.LoginButton.GrabDefault();
+
+			this.RememberUsernameCheckButton.Active = this.Config.GetRememberMe();
+			if (this.Config.GetRememberMe())
+			{
+				this.UsernameEntry.Text = this.Config.GetGalaxiesLoginUsername();
+			}
+
 			ShowAll();
 		}
 
 		private void BindEvents()
 		{
+			this.RememberUsernameCheckButton.Toggled += OnRememberMeToggled;
 			this.LoginButton.Clicked += OnLoginClicked;
 			this.CancelButton.Clicked += OnCancelClicked;
 		}
@@ -54,12 +66,15 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 			this.MainBox.PackStart(this.UsernameAlignment);
 			this.MainBox.PackStart(this.PasswordAlignment);
 			this.MainBox.PackStart(this.ThrobberAlignment);
+			this.MainBox.PackStart(this.RememberUsernameAlignment);
 			this.MainBox.PackEnd(this.ButtonBoxAlignment);
 
 			this.UsernameAlignment.Add(this.UsernameEntry);
 			this.PasswordAlignment.Add(this.PasswordEntry);
 
 			this.ThrobberAlignment.Add(this.Throbber);
+
+			this.RememberUsernameAlignment.Add(this.RememberUsernameCheckButton);
 
 			this.ButtonBoxAlignment.Add(this.ButtonBox);
 
@@ -90,14 +105,16 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 			this.UsernameEntry = new PlaceholderEntry
 			{
 				TooltipText = "Username",
-				PlaceholderText = "Username"
+				PlaceholderText = "Username",
+				ActivatesDefault = true
 			};
 
 			this.PasswordEntry = new PlaceholderEntry
 			{
 				TooltipText = "Password",
 				PlaceholderText = "Password",
-				Visibility = false
+				Visibility = false,
+				ActivatesDefault = true
 			};
 
 			this.ThrobberAlignment = new Alignment(1.0f, 0.5f, 1.0f, 1.0f)
@@ -107,6 +124,17 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 			};
 
 			this.Throbber = new Label();
+
+			this.RememberUsernameAlignment = new Alignment(0.5f, 0.5f, 1.0f, 1.0f)
+			{
+				LeftPadding = 6,
+				RightPadding = 6
+			};
+
+			this.RememberUsernameCheckButton = new CheckButton
+			{
+				Label = "Remember me"
+			};
 
 			this.ButtonBoxAlignment = new Alignment(1.0f, 0.5f, 1.0f, 1.0f)
 			{
@@ -128,7 +156,9 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 
 			this.LoginButton = new Button
 			{
-				Label = "Login"
+				Label = "Login",
+				ReceivesDefault = true,
+				CanDefault = true
 			};
 
 			this.CancelButton = new Button
