@@ -28,7 +28,7 @@ namespace Launchpad.Launcher.Interface.LoginDialog
 
 		private void Build()
 		{
-			this.Title = "Login - Star Wars Galaxies";
+			this.Title = "Login - SWG TC3";
 
 			this.WidthRequest = 250;
 
