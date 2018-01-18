@@ -224,6 +224,22 @@
           <e p="GameHandler.cs" t="Include" />
           <e p="LauncherHandler.cs" t="Include" />
           <e p="Protocols" t="Include">
+            <e p="Async" t="Include">
+              <e p="AsyncProgressReportBuilder.cs" t="Include" />
+              <e p="IAsyncBannerProvider.cs" t="Include" />
+              <e p="IAsyncChangelogProvider.cs" t="Include" />
+              <e p="IAsyncPatchProvider.cs" t="Include" />
+              <e p="IAsyncRemoteFileProvider.cs" t="Include" />
+              <e p="Manifest" t="Include">
+                <e p="AsyncManifestPatchService.cs" t="Include" />
+              </e>
+              <e p="Progress" t="Include">
+                <e p="AsyncProgressReport.cs" t="Include" />
+              </e>
+              <e p="RemoteFileProviders" t="Include">
+                <e p="AsyncFTPRemoteFileProvider.cs" t="Include" />
+              </e>
+            </e>
             <e p="EModule.cs" t="Include" />
             <e p="Manifest" t="Include">
               <e p="FTPProtocolHandler.cs" t="Include" />
