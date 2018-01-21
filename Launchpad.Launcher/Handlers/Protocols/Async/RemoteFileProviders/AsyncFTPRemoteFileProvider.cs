@@ -160,8 +160,8 @@ namespace Launchpad.Launcher.Handlers.Protocols.RemoteFileProviders
 		/// <param name="source">The stream to read from.</param>
 		/// <param name="targetStream">The stream to write to.</param>
 		/// <param name="chunkSize">The size of the chunk.</param>
-		/// <param name="progressReport">The progress reporter.</param>
 		/// <param name="ct">A cancellation token.</param>
+		/// <param name="progressReport">The progress reporter.</param>
 		/// <returns>A byte array containing the data in the stream.</returns>
 		private async Task CopyChunkedAsync
 		(
@@ -191,8 +191,8 @@ namespace Launchpad.Launcher.Handlers.Protocols.RemoteFileProviders
 		/// </summary>
 		/// <param name="source">The stream to read from.</param>
 		/// <param name="chunkSize">The size of the chunk.</param>
-		/// <param name="progressReport">The progress reporter.</param>
 		/// <param name="ct">A cancellation token.</param>
+		/// <param name="progressReport">The progress reporter.</param>
 		/// <returns>A byte array containing the data in the stream.</returns>
 		private async Task<byte[]> ReadChunkedAsync
 		(

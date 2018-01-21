@@ -25,6 +25,7 @@ using System.Drawing;
 using System.Threading.Tasks;
 using Launchpad.Common.Enums;
 using Launchpad.Common.Handlers.Manifest;
+using Launchpad.Launcher.Utility;
 
 namespace Launchpad.Launcher.Handlers.Protocols
 {
@@ -36,7 +37,7 @@ namespace Launchpad.Launcher.Handlers.Protocols
 		/// <summary>
 		/// Gets the configuration instance.
 		/// </summary>
-		protected ConfigHandler Configuration { get; }
+		protected ConfigHandler Config { get; }
 
 		/// <summary>
 		/// Gets an instance of the manifest service.
@@ -53,12 +54,12 @@ namespace Launchpad.Launcher.Handlers.Protocols
 		/// </summary>
 		protected AsyncManifestPatchService()
 		{
-			this.Configuration = ConfigHandler.Instance;
+			this.Config = ConfigHandler.Instance;
 			this.Manifests = new ManifestHandler
 			(
-				ConfigHandler.GetLocalDir(),
-				new Uri(this.Configuration.GetBaseProtocolURL()),
-				this.Configuration.GetSystemTarget()
+				DirectoryHelpers.GetLocalLauncherDirectory(),
+				new Uri(this.Config.Configuration.RemoteAddress.AbsoluteUri),
+				this.Config.Configuration.SystemTarget
 			);
 		}
 
